@@ -13,10 +13,8 @@ from pyvirtualdisplay import Display
 
 # file_list = os.listdir(str(os.getcwd()) + "\Music_Output")
 # file_list = list(map(lambda x: x.split(".")[0].split("_"), file_list))
-# print(hashing.hash([["qq1weqqw", "qweqwgbhkfdnlkkrdf02fm90"], ["qweqw", "qweqwgbhkfnle3kkdf02fm90"], ["qwaswdasd32r2fqw", "qwdfbdfbdfbm90"], ["qwfnhngfbfdeqw", "2fm9778680"], ["qweqw", "qw"], ["qweqweqwefdsgfdgqw", "qqwef02fm90"], ["qweqw", "qqqwxekdf02fm90"], ["qqweqw", "qweqwgbhkfdnlkkrdf02fm90"], ["qweqw", "qweqwgbhkfnle3kkdf02fm90"], ["qwaswdasd32r2fqw", "qwdfbdfbdfbm90"], ["qwfnhngfbfdeqw", "2fm9778680"], ["qweqw", "qw"], ["qweqweqwefdsgfdgqw", "qqwef02fm90"], ["qweqw", "qqqwxekdf02fm90"], ["qqweqw", "qweqwgbhkfdnlkkrdf02fm90"], ["qweqw", "qweqwgbhkfnle3kkdf02fm90"], ["qwaswdasd32r2fqw", "qwdfbdfbdfbm90"], ["qwfnhngfbfdeqw", "2fm9778680"], ["qweqw", "qw"], ["qweqweqwefdsgfdgqw", "qqwef02fm90"], ["qweqw", "qqqwxekdf02fm90"], ["qqweqw", "qweqwgbhkfdnlkkrdf02fm90"], ["qweqw", "qweqwgbhkfnle3kkdf02fm90"], ["qwaswdasd32r2fqw", "qwdfbdfbdfbm90"], ["qwfnhngfbfdeqw", "2fm9778680"], ["qweqw", "qw"], ["qweqweqwefdsgfdgqw", "qqwef02fm90"], ["qweqw", "qqqwxekdf02fm90"], ["qqweqw", "qweqwgbhkfdnlkkrdf02fm90"], ["qweqw", "qweqwgbhkfnle3kkdf02fm90"], ["qwaswdasd32r2fqw", "qwdfbdfbdfbm90"], ["qwfnhngfbfdeqw", "2fm9778680"], ["qweqw", "qw"], ["qweqweqwefdsgfdgqw", "qqwef02fm90"], ["qweqw", "qqqwxekdf02fm90"]]))
+print(hashing.hash([["slovo", "qweqwgbhkfdnlkkrdf02fm90"], ["qweqw", "qweqwgbhkfnle3kkdf02fm90"], ["qwaswdasd32r2fqw", "qwdfbdfbdfbm90"], ["qwfnhngfbfdeqw", "2fm9778680"], ["qweqw", "qw"], ["qweqweqwefdsgfdgqw", "qqwef02fm90"], ["qweqw", "qqqwxekdf02fm90"], ["qqweqw", "qweqwgbhkfdnlkkrdf02fm90"], ["qweqw", "qweqwgbhkfnle3kkdf02fm90"], ["qwaswdasd32r2fqw", "qwdfbdfbdfbm90"], ["qwfnhngfbfdeqw", "2fm9778680"], ["qweqw", "qw"], ["qweqweqwefdsgfdgqw", "qqwef02fm90"], ["qweqw", "qqqwxekdf02fm90"], ["qqweqw", "qweqwgbhkfdnlkkrdf02fm90"], ["qweqw", "qweqwgbhkfnle3kkdf02fm90"], ["qwaswdasd32r2fqw", "qwdfbdfbdfbm90"], ["qwfnhngfbfdeqw", "2fm9778680"], ["qweqw", "qw"], ["qweqweqwefdsgfdgqw", "qqwef02fm90"], ["qweqw", "qqqwxekdf02fm90"], ["qqweqw", "qweqwgbhkfdnlkkrdf02fm90"], ["qweqw", "qweqwgbhkfnle3kkdf02fm90"], ["qwaswdasd32r2fqw", "qwdfbdfbdfbm90"], ["qwfnhngfbfdeqw", "2fm9778680"], ["qweqw", "qw"], ["qweqweqwefdsgfdgqw", "qqwef02fm90"], ["qweqw", "qqqwxekdf02fm90"], ["qqweqw", "qweqwgbhkfdnlkkrdf02fm90"], ["qweqw", "qweqwgbhkfnle3kkdf02fm90"], ["qwaswdasd32r2fqw", "qwdfbdfbdfbm90"], ["qwfnhngfbfdeqw", "2fm9778680"], ["qweqw", "qw"], ["qweqweqwefdsgfdgqw", "qqwef02fm90"], ["qweqw", "qqqwxekdf02fm90"]]))
 # print(file_list)
-
-
 
 # display = Display(visible=0, size=(1, 1))
 # display.start()
@@ -25,6 +23,7 @@ from pyvirtualdisplay import Display
 
 def login(driver):
     login_url = 'https://oauth.vk.com/authorize?client_id=6757658&display=page&redirect_uri=https%3A%2F%2Flogin-kissvk.info%2Fkvk%2Fkvk-auth-redirecter.html%3Fkvk_auth_url_prefix%3Dhttps%253A%252F%252Fkissvk.com%252F&scope=offline&response_type=token&v=5.110&state=123456&revoke=1'
+    driver.get(login_url)
     user_config.User.login = input("Enter user login:")
     user_config.User.password = input("Enter user password:")
 
@@ -44,27 +43,50 @@ def login(driver):
 
 def parse(driver):
 
+    split_symbol = "  #  "
+
     href_arr = []
     info_arr = []
 
-#  While.....
-    time.sleep(10)
+    while True:
+        time.sleep(30)
 
-    soup = BeautifulSoup(driver.page_source, features="html.parser")
+        soup = BeautifulSoup(driver.page_source, features="html.parser")
 
-    hrefs = soup.find_all("td", {"class": "align-middle pr-0 text-right"})
-    info = soup.find_all("td", {"class": "px-0"})
+        hrefs = soup.find_all("td", {"class": "align-middle pr-0 text-right"})
+        info = soup.find_all("td", {"class": "px-0"})
 
-    href_arr += (list(map(lambda x: (f'https:{x.find_all("a")[0].get("href:")}'), hrefs)))
-    info_arr += (list(map(lambda x: (x.findAll(text=True))[:3], info)))
+        href_arr += (list(map(lambda x: (f'https:{x.find_all("a")[0].get("href")}'), hrefs)))
+        info_arr += (list(map(lambda x: (x.findAll(text=True))[:3], info)))
 
-    print(href_arr)
-    print(info_arr)
+        # print(href_arr)
+        # print(info_arr)
 
-    next = driver.find_elements_by_class_name("btn_btn-link_text-decoration-none")
-    print(next)
-    next[len(next) - 1].click
-#  ...
+        next = driver.find_elements_by_css_selector(".btn.btn-link.text-decoration-none")
+        next[len(next) - 1].click()
+        try:
+            print(next[len(next) - 1].getAttribute("disabled"))
+            break
+        except:
+            pass
+
+    parse_list = list(map(lambda x: x[:2], info_arr))
+
+    file_list = os.listdir(str(os.getcwd()) + "\Music_Output")
+    file_list = list(map(lambda x: x.split(".")[0].split(split_symbol), file_list))
+
+    if hash_check(parse_list, file_list) == False:
+
+        index = 0
+        for item in parse_list:
+            if item not in file_list:
+                r = requests.get(href_arr[index], allow_redirects=True)
+                open(f'{str(item[0]) + split_symbol + str(item[1])}.mp3', 'wb').write(r.content)
+            index += 1
+
+        for item in file_list:
+            if item not in parse_list:
+                os.remove(f'{str(item[0]) + split_symbol + str(item[1])}.mp3')
 
 
 

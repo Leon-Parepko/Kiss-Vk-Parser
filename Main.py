@@ -19,6 +19,8 @@ if __name__ == '__main__':
         parser_func.parse(driver)
 
 
+
+
     except Exception as e:
         print(e)
     pass

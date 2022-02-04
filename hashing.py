@@ -1,8 +1,4 @@
 
-
-def ppp():
-    print("sdfgh")
-
 def hash(info_arr):
 
     operation_counter = 1
