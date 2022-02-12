@@ -71,7 +71,7 @@ def parse(driver, delay):
                 driver.find_element_by_xpath('//*[@id="kvk-header"]/div/a').click()
 
 
-                # Test (close traceback add)
+                # Test (close traceback ad)
                 try:
                     driver.find_element_by_class_name("ns-vnrx1-e-16").click()
                 except:
