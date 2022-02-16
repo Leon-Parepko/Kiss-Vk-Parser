@@ -3,3 +3,4 @@ __pycache__/
 user_config.py
 test_selenium.py
 *.log
+*.mp3
