@@ -12,7 +12,9 @@ if __name__ == '__main__':
 
 
 
-
+    # arr1 = [["qweqweq4fghfgwe", "sdjasdasdkfhdg"], ["qweqweqwe", "sdjk6h6tdg"], ["qweqwe2weqwe", "sdjkfhqwedg"]]
+    #
+    # print(hashing.hash(arr1))
 
 
     # try:
