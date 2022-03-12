@@ -6,3 +6,5 @@ test_selenium.py
 *.mp3
 *.pickle
 *.json
+*.zip
+*.rar

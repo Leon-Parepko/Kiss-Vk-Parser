@@ -2,6 +2,8 @@ import logging
 import time
 
 from googleapiclient.http import MediaFileUpload
+from tqdm import tqdm
+
 from Google import Create_Service
 
 import requests
@@ -10,19 +12,127 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 import hashing
 import os
+import zipfile
 from selenium.webdriver.common.keys import Keys
 from pyvirtualdisplay import Display
 import pwinput
 
 
-def login(driver):
+'''
+This function creates .zip archive
+consisting of all Music_Output/ directory
+files. It is implemented by use of basic
+zipfile library.  
+'''
+def compress_zip():
+    z = zipfile.ZipFile('Music.zip', 'w')
+    file_list = os.listdir(str(os.getcwd()) + "\Music_Output")
+
+    for file in tqdm(file_list):
+        z.write(f'Music_Output\{file}')
+    z.close()
+
+    return os.path.getsize('Music.zip')
+
+
+'''
+
+'''
+def get_drive_folder_id(google_drive):
+    folder_id = ''
+    for i in range(0, 2):
+        for file in google_drive.files().list().execute()['files']:
+            if file['name'] == 'Music':
+                folder_id = (file["id"])
+                return folder_id
+
+        if not folder_id:
+            folder_metadata = {'name': 'Music', 'mimeType': 'application/vnd.google-apps.folder'}
+            google_drive.files().create(body=folder_metadata).execute()
+            logging.info(f'Created new Google Drive "Music" folder')
+        else:
+            return folder_id
+
+
+'''
+
+'''
+def get_drive_file_list(google_driver):
+    results = google_driver.files().list(q="'" + get_drive_folder_id(google_driver) + "' in parents", fields="nextPageToken, files(id, name)").execute()
+    items = results.get('files', [])
+    return items
+
+
+'''
+This function uploads Music.zip file
+to Music/ directory of your google drive.
+Also, it uses size check to compare local 
+zip file with google drive zip file.
+'''
+def upload_zip(google_drive):
+    # Check zip file size
+    zip_size = 0
+    zip_id = ''
+    for item in get_drive_file_list(google_drive):
+        if item['name'] == 'Music.zip':
+            zip_id = item['id']
+            zip_size = (google_drive.files().get(fileId=zip_id, fields='size').execute())['size']
+            break
+
+    # Upload zip archive if it's different or did not exist
+    if zip_size != compress_zip():
+        try:
+            google_drive.files().delete(fileId=zip_id).execute()
+        except:
+            pass
+
+        zip_metadata = {'name': f'Music.zip', 'parents': [get_drive_folder_id(google_drive)]}
+        media = MediaFileUpload(f'Music.zip', mimetype='application/zip', resumable=True)
+        google_drive.files().create(body=zip_metadata, media_body=media, fields='id').execute()
+
+
+'''
+This function returns current list 
+of files in the Music_Output/ local
+directory and splits it by author and
+song name. 
+'''
+def get_file_list(split_symbol):
+    file_list = os.listdir(str(os.getcwd()) + "\Music_Output")
+    file_list = list(map(lambda x: x.split(".mp3")[0].split(split_symbol), file_list))
+    return file_list
+
+
+'''
+This function simply compare 
+two arrays by invoking hash function
+in hashing.py.
+'''
+def hash_check(info_arr_1, info_arr_2):
+    if hashing.hash(info_arr_1) == hashing.hash(info_arr_2):
+        return True
+    else:
+        return False
+
+
+'''
+This function automatically log-in
+to kiss-vk, using your VK profile authorization
+(message or telephone call verification).
+You could enter your login and password data
+by simple console input (safe_auth = False) or by modifying
+user_config.py (safe_auth = True).
+'''
+def login(driver, safe_auth = True):
     login_url = 'https://oauth.vk.com/authorize?client_id=6757658&display=page&redirect_uri=https%3A%2F%2Flogin-kissvk.info%2Fkvk%2Fkvk-auth-redirecter.html%3Fkvk_auth_url_prefix%3Dhttps%253A%252F%252Fkissvk.com%252F&scope=offline&response_type=token&v=5.110&state=123456&revoke=1'
     driver.get(login_url)
-    # user_config.User.login = input("Enter user login:")
-    # user_config.User.password = input("Enter user password:")
 
-    login_elem = driver.find_element_by_name("email")
-    pass_elem = driver.find_element_by_name("pass")
+    if safe_auth:
+        login_elem = driver.find_element_by_name("email")
+        pass_elem = driver.find_element_by_name("pass")
+    else:
+        user_config.User.login = input("Enter user login:")
+        user_config.User.password = input("Enter user password:")
 
     login_elem.send_keys(user_config.User.login)
     pass_elem.send_keys(user_config.User.password)
@@ -37,45 +147,21 @@ def login(driver):
     logging.info(f'Bot has been successfully logged in as: {user_config.User.login}  ver. key: {str(user_config.User.phone_verify)}')
 
 
-# Upload without deleting (NOT DYNAMIC!)
-def upload(google_drive, file_names):
-    folder_id = ""
-    for i in range(0, 2):
-        for file in google_drive.files().list().execute()['files']:
-            if file['name'] == 'Music':
-                folder_id = (file["id"])
-                break
-
-        if not folder_id:
-            folder_metadata = {'name': 'Music', 'mimeType': 'application/vnd.google-apps.folder'}
-            google_drive.files().create(body=folder_metadata).execute()
-            logging.info(f'Created new Google Drive "Music" folder')
-        else:
-            break
-
-    for name in file_names:
-        file_metadata = {'name': f'{name}.mp3', 'parents': [folder_id]}
-        media = MediaFileUpload(f'./Music_Output/{name}.mp3', mimetype='audio/mpeg')
-
-        google_drive.files().create(body=file_metadata, media_body=media, fields='id').execute()
-
-
-
-
-def get_file_list(split_symbol):
-    file_list = os.listdir(str(os.getcwd()) + "\Music_Output")
-    file_list = list(map(lambda x: x.split(".mp3")[0].split(split_symbol), file_list))
-    return file_list
-
-
-
-
-def parse(driver, delay):
-
-    split_symbol = "  #  "
-    upload_counter = 0
-
-    google_drive = Create_Service(user_config.Drive.secret, user_config.Drive.name, user_config.Drive.version, user_config.Drive.scopes)
+'''
+This is the main function to parse, download
+and upload all the content.
+** iter_delay=<int> regulates delay between
+  every iteration (in minutes). It did not
+  affect on overall code performance (speed).
+** overall_delay=<int> regulates inner code
+  delay (works as multiplier). 
+  IT AFFECTS ON OVERALL CODE PERFORMANCE!
+  increase it in case you have slow 
+  internet connection or low performance PC.  
+'''
+upload_counter = 0
+def parse(driver, google_drive, iter_delay=1, overall_delay=1, split_symbol = "  #  "):
+    global upload_counter
 
     href_arr = []
     info_arr = []
@@ -86,22 +172,18 @@ def parse(driver, delay):
         pass
 
     while True:
-        time.sleep(4)
+        time.sleep(4 * overall_delay)
 
         try:
             try:
                 while True:
                     driver.find_element_by_xpath('/html/body/div/div[1]/div/div[3]/span').click()
-                    time.sleep(0.5)
-                    print("---")
+                    time.sleep(0.5 * overall_delay)
             except:
                 pass
 
-
-            print("eeeeeeeeeeeeeee")
             driver.find_element_by_xpath('//*[@id="dismiss-button"]').click()
-            print("+++")
-            time.sleep(5)
+            time.sleep(5 * overall_delay)
         except:
             pass
 
@@ -175,10 +257,10 @@ def parse(driver, delay):
 
     file_list = get_file_list(split_symbol)
 
-    print(parse_list)
-    print(file_list)
-    print(hashing.hash(parse_list))
-    print(hashing.hash(file_list))
+    # print(parse_list)
+    # print(file_list)
+    # print(hashing.hash(parse_list))
+    # print(hashing.hash(file_list))
 
     if hash_check(parse_list, file_list) == False:
         print("Loading files...")
@@ -210,26 +292,14 @@ def parse(driver, delay):
         if removed_files:
             logging.info(f'Some files have been REMOVED: {str(removed_files)}')
 
-        print(added_files)
-        print(removed_files)
-        print(warning_files)
+        # print(added_files)
+        # print(removed_files)
+        # print(warning_files)
     print("Finished!")
 
-    file_list = get_file_list(split_symbol)
-    if upload_counter == 10:
-        upload(google_drive, file_list)
+    if upload_counter < 2:
+        upload_zip(google_drive)
         upload_counter = 0
 
     upload_counter += 1
-    time.sleep(60 * delay)
-
-
-
-
-
-
-def hash_check(info_arr_1, info_arr_2):
-    if hashing.hash(info_arr_1) == hashing.hash(info_arr_2):
-        return True
-    else:
-        return False
+    time.sleep(60 * iter_delay)
