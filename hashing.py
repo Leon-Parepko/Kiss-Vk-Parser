@@ -1,5 +1,12 @@
 '''
-
+This is custom hash function for
+file name check.
+It requires 2D array on input
+[[name_1, author_1], [name_2, author_2], ...]
+and returns personal hash code <int>.
+THE ORDER OF ELEMENTS DID NOT AFFECT
+OUTPUT RESULT!
+(but it would if uncomment)
 '''
 def hash(info_arr):
 

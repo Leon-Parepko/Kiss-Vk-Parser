@@ -1,21 +1,16 @@
-import logging
-import time
 
 from googleapiclient.http import MediaFileUpload
 from tqdm import tqdm
-
-from Google import Create_Service
-
-import requests
-import user_config
 from bs4 import BeautifulSoup
-from selenium import webdriver
-import hashing
+from datetime import datetime
+import time
 import os
+import logging
 import zipfile
-from selenium.webdriver.common.keys import Keys
-from pyvirtualdisplay import Display
-import pwinput
+import requests
+import config
+import hashing
+# import pwinput
 
 
 '''
@@ -26,17 +21,20 @@ zipfile library.
 '''
 def compress_zip():
     z = zipfile.ZipFile('Music.zip', 'w')
-    file_list = os.listdir(str(os.getcwd()) + "\Music_Output")
+    file_list = os.listdir(str(os.getcwd()) + "/Music_Output")
 
     for file in tqdm(file_list):
-        z.write(f'Music_Output\{file}')
+        z.write(f'Music_Output/{file}')
     z.close()
 
     return os.path.getsize('Music.zip')
 
 
 '''
-
+This function search and returns
+the id of google drive default "Music" folder.
+In case there is no such folder, it would be
+created automatically in root directory. 
 '''
 def get_drive_folder_id(google_drive):
     folder_id = ''
@@ -55,7 +53,9 @@ def get_drive_folder_id(google_drive):
 
 
 '''
-
+This function simply returns
+the list of all existing files
+in default google drive "Music" folder.
 '''
 def get_drive_file_list(google_driver):
     results = google_driver.files().list(q="'" + get_drive_folder_id(google_driver) + "' in parents", fields="nextPageToken, files(id, name)").execute()
@@ -98,7 +98,7 @@ directory and splits it by author and
 song name. 
 '''
 def get_file_list(split_symbol):
-    file_list = os.listdir(str(os.getcwd()) + "\Music_Output")
+    file_list = os.listdir(str(os.getcwd()) + "/Music_Output")
     file_list = list(map(lambda x: x.split(".mp3")[0].split(split_symbol), file_list))
     return file_list
 
@@ -121,7 +121,7 @@ to kiss-vk, using your VK profile authorization
 (message or telephone call verification).
 You could enter your login and password data
 by simple console input (safe_auth = False) or by modifying
-user_config.py (safe_auth = True).
+config.py (safe_auth = True).
 '''
 def login(driver, safe_auth = True):
     login_url = 'https://oauth.vk.com/authorize?client_id=6757658&display=page&redirect_uri=https%3A%2F%2Flogin-kissvk.info%2Fkvk%2Fkvk-auth-redirecter.html%3Fkvk_auth_url_prefix%3Dhttps%253A%252F%252Fkissvk.com%252F&scope=offline&response_type=token&v=5.110&state=123456&revoke=1'
@@ -131,37 +131,42 @@ def login(driver, safe_auth = True):
         login_elem = driver.find_element_by_name("email")
         pass_elem = driver.find_element_by_name("pass")
     else:
-        user_config.User.login = input("Enter user login:")
-        user_config.User.password = input("Enter user password:")
+        config.User.login = input("Enter user login:")
+        config.User.password = input("Enter user password:")
+        # config.User.login = pwinput.pwinput(prompt="Enter user login:")
+        # config.User.password = pwinput.pwinput(prompt="Enter user password:")
 
-    login_elem.send_keys(user_config.User.login)
-    pass_elem.send_keys(user_config.User.password)
+    login_elem.send_keys(config.User.login)
+    pass_elem.send_keys(config.User.password)
     driver.find_element_by_id("install_allow").click()
 
     time.sleep(10)
     code_elem = driver.find_element_by_name("code")
-    user_config.User.phone_verify = input("Enter verification code:")
-    code_elem.send_keys(str(user_config.User.phone_verify))
+    config.User.ver_code = input("Enter verification code:")
+    code_elem.send_keys(str(config.User.ver_code))
     driver.find_element_by_class_name("button").click()
     time.sleep(20)
-    logging.info(f'Bot has been successfully logged in as: {user_config.User.login}  ver. key: {str(user_config.User.phone_verify)}')
+    logging.info(f'Bot has been successfully logged in as: {config.User.login}  ver. key: {str(config.User.ver_code)}')
 
 
 '''
 This is the main function to parse, download
 and upload all the content.
-** iter_delay=<int> regulates delay between
-  every iteration (in minutes). It did not
-  affect on overall code performance (speed).
-** overall_delay=<int> regulates inner code
-  delay (works as multiplier). 
+
+** ITER_DELAY=<int> - regulates delay between
+  every iteration (in minutes, default = 0). 
+  It did not affect on overall code performance (speed).
+  
+** OVERALL_DELAY=<int> - regulates inner code
+  delay (works as multiplier default = 1). 
   IT AFFECTS ON OVERALL CODE PERFORMANCE!
   increase it in case you have slow 
   internet connection or low performance PC.  
 '''
-upload_counter = 0
-def parse(driver, google_drive, iter_delay=1, overall_delay=1, split_symbol = "  #  "):
-    global upload_counter
+daily_uploaded = False
+def parse(driver, google_drive, iter_delay=0, overall_delay=1, split_symbol = "  #  "):
+
+    global daily_uploaded
 
     href_arr = []
     info_arr = []
@@ -181,6 +186,7 @@ def parse(driver, google_drive, iter_delay=1, overall_delay=1, split_symbol = " 
                     time.sleep(0.5 * overall_delay)
             except:
                 pass
+
 
             driver.find_element_by_xpath('//*[@id="dismiss-button"]').click()
             time.sleep(5 * overall_delay)
@@ -207,13 +213,8 @@ def parse(driver, google_drive, iter_delay=1, overall_delay=1, split_symbol = " 
             next = driver.find_elements_by_css_selector(".btn.btn-link.text-decoration-none")
             next[len(next) - 1].click()
         except:
-
-            driver.find_element_by_xpath('//*[@id="kvk-header"]/div/a').click()
-
-            # print("Finished\n\n************************************")
-            # print(href_arr)
-            # print("\n\n************************************")
-            # print(info_arr)
+            test_elem = driver.find_element_by_xpath('//*[@id="kvk-header"]/div/a')
+            driver.execute_script("arguments[0].click();", test_elem)
             break
 
 
@@ -238,7 +239,7 @@ def parse(driver, google_drive, iter_delay=1, overall_delay=1, split_symbol = " 
     href_arr = temp_href_arr
 
 
-    # Reduce collisions by renameing
+    # Reduce collisions by renaming
     for i in parse_list:
         counter = 0
         i = [i[0].upper(), i[1].upper()]
@@ -257,12 +258,8 @@ def parse(driver, google_drive, iter_delay=1, overall_delay=1, split_symbol = " 
 
     file_list = get_file_list(split_symbol)
 
-    # print(parse_list)
-    # print(file_list)
-    # print(hashing.hash(parse_list))
-    # print(hashing.hash(file_list))
-
     if hash_check(parse_list, file_list) == False:
+        driver.save_screenshot("last_screenshot.png")
         print("Loading files...")
         removed_files = []
         added_files = []
@@ -272,7 +269,7 @@ def parse(driver, google_drive, iter_delay=1, overall_delay=1, split_symbol = " 
             if item not in file_list:
                 file_name = str(item[0]) + split_symbol + str(item[1])
                 r = requests.get(href_arr[index], allow_redirects=True)
-                open(f'Music_Output\{file_name}.mp3', 'wb').write(r.content)
+                open(f'Music_Output/{file_name}.mp3', 'wb').write(r.content)
                 added_files.append(f'{str(item[0]) + split_symbol + str(item[1])}.mp3')
             index += 1
 
@@ -280,7 +277,7 @@ def parse(driver, google_drive, iter_delay=1, overall_delay=1, split_symbol = " 
             file_name = str(item[0]) + split_symbol + str(item[1])
 
             if item not in parse_list:
-                os.remove(f'Music_Output\{file_name}.mp3')
+                os.remove(f'Music_Output/{file_name}.mp3')
                 removed_files.append(f'{file_name}.mp3')
             elif os.path.getsize(f'Music_Output/{file_name}.mp3') == 0:
                 warning_files.append(f'{file_name}.mp3')
@@ -292,14 +289,23 @@ def parse(driver, google_drive, iter_delay=1, overall_delay=1, split_symbol = " 
         if removed_files:
             logging.info(f'Some files have been REMOVED: {str(removed_files)}')
 
-        # print(added_files)
-        # print(removed_files)
-        # print(warning_files)
     print("Finished!")
 
-    if upload_counter < 2:
-        upload_zip(google_drive)
-        upload_counter = 0
 
-    upload_counter += 1
+
+    cur_time_H = int(datetime.now().strftime("%H"))
+
+    time_from = int(config.Settings.upload_time.split(' - ')[0].split(':')[0])
+    time_till = int(config.Settings.upload_time.split(' - ')[1].split(':')[0])
+
+#   Reset daily upload flag in 00:00
+    if 0 <= cur_time_H <= iter_delay * 2:
+        daily_uploaded = False
+
+#   Upload only at night
+    if time_from <= cur_time_H <= time_till and daily_uploaded == False:
+        upload_zip(google_drive)
+        daily_uploaded = True
+
+
     time.sleep(60 * iter_delay)
