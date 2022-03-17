@@ -299,11 +299,11 @@ def parse(driver, google_drive, iter_delay=0, overall_delay=1, split_symbol = " 
     time_till = int(config.Settings.upload_time.split(' - ')[1].split(':')[0])
 
 #   Reset daily upload flag in 00:00
-    if 0 <= cur_time_H <= iter_delay * 2:
+    if 0 <= cur_time_H <= (iter_delay / 60) * 2:
         daily_uploaded = False
 
 #   Upload only at night
-    if time_from <= cur_time_H <= time_till and daily_uploaded == False:
+    if (time_from <= cur_time_H <= time_till) and daily_uploaded == False:
         upload_zip(google_drive)
         daily_uploaded = True
 

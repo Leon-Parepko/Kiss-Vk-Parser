@@ -1,6 +1,5 @@
 refs/
 __pycache__/
-config.py
 test_selenium.py
 *.log
 *.mp3
@@ -8,3 +7,4 @@ test_selenium.py
 *.json
 *.zip
 *.rar
+*.png

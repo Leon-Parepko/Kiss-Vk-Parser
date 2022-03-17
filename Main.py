@@ -40,7 +40,6 @@ logging.basicConfig(
 
 
 if __name__ == '__main__':
-
     try:
         google_drive = Create_Service(
                                     config.Drive.secret,
